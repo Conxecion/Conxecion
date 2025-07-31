@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SkillConnect – Local Skill Finder</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      color: white;
+      overflow-x: hidden;
+    }
+    body {
+      background: linear-gradient(-45deg, #1e3a8a, #f97316, #0f766e, #1f2937 , #6d28d9);
+      background-size: 400% 400%;
+      animation: gradientBG 5s ease infinite;
+    }
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .container {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    h1 {
+      font-size: 3.5rem;
+      margin-bottom: 10px;
+      text-shadow: 1px 1px 3px black;
+    }
+    p {
+      font-size: 1.3rem;
+      max-width: 700px;
+      margin: 10px auto 30px;
+    }
+    .btn {
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      padding: 14px 32px;
+      margin: 10px;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.3rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: background 0.3s;
+    }
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .form-section {
+      display: none;
+      margin-top: 40px;
+    }
+    form {
+      background: rgba(0, 0, 0, 0.2);
+      padding: 30px;
+      max-width: 500px;
+      margin: 40px auto;
+      border-radius: 20px;
+      box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      color: black;
+    }
+    input[type="submit"] {
+      background: #00c9ff;
+      color: black;
+      cursor: pointer;
+    }
+    input[type="submit"]:hover {
+      background: #92fe9d;
+    }
+    footer {
+      margin-top: 60px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.7);
+    }
+    #searchResults {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 15px;
+      padding: 20px;
+      margin: 20px auto;
+      width: 80%;
+      color: white;
+    }
+    .result-card {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SkillConnect</h1>
+    <p>Connecting hidden local talents to those who need them most. Discover skilled workers near you.</p>
+    <button class="btn" onclick="showSection('registerSection')">Register Your Skill</button>
+    <button class="btn" onclick="showSection('searchSection')">Find a Skill</button>
+
+    <!-- Registration Form Section -->
+    <div id="registerSection" class="form-section">
+      <form id="registerForm">
+        <h2>Register Your Skill</h2>
+        <input type="text" name="name" placeholder="Full Name" required>
+        <select name="occupation" id="occupationSelect" required></select>
+        <select name="state" id="stateSelect" required onchange="updateDistricts()">
+          <option value="">Select State</option>
+        </select>
+        <select name="district" id="districtSelect" required onchange="updateBlocks()">
+          <option value="">Select District</option>
+        </select>
+        <select name="block" id="blockSelect" required>
+          <option value="">Select Block</option>
+        </select>
+        <input type="text" name="mobile" placeholder="Mobile No" required>
+        <select name="experience" required>
+          <option value="">Years of Experience</option>
+          <option value="0-2">0-2</option>
+          <option value="2-5">2-5</option>
+          <option value="5-10">5-10</option>
+          <option value="10+">More than 10 years</option>
+        </select>
+        <input type="submit" value="Register">
+      </form>
+    </div>
+
+    <!-- Search Form Section -->
+    <div id="searchSection" class="form-section">
+      <form id="searchForm">
+        <h2>Find a Worker</h2>
+        <select name="state" id="searchState" required onchange="updateSearchDistricts()">
+          <option value="">Select State</option>
+        
+        </select>
+        <select name="district" id="searchDistrict" required onchange="updateSearchBlocks()">
+          <option value="">Select District</option>
+        </select>
+        <select name="occupation" id="searchOccupation" required>
+  <option value="">Select Occupation</option>
+</select>
+
+<script>
+  window.onload = function () {
+    const occupations = [
+  "Farmer (किसान)",
+  "Maid (काम वाली बाई)",
+  "Dairy Worker (दूध वाला)",
+  "Shepherd (चरवाहा)",
+  "Fisherman (मछुआरा)",
+  "Cattle Rearer (पशुपालक)",
+  "Goat Herder (बकरी चराने वाला)",
+  "Pig Farmer (सूअर पालक)",
+  "Agricultural Labourer (कृषि मजदूर)",
+  "Irrigation Worker (सिंचाई कर्मचारी)",
+  "Mason (राजमिस्त्री)",
+  "Carpenter (बढ़ई)",
+  "Plumber (प्लंबर)",
+  "Electrician (बिजली मिस्त्री)",
+  "Welder (वेल्डर)",
+  "Construction Worker (निर्माण मजदूर)",
+  "Tile Layer (टाइल्स वाला)",
+  "Road Worker (सड़क मजदूर)",
+  "Painter (पेंटर)",
+  "Blacksmith (लोहार)",
+  "Cook (रसोइया)",
+  "Sweeper (सफाई कर्मचारी)",
+  "Watchman (चौकीदार)",
+  "Barber (नाई)",
+  "Tailor (दर्जी)",
+  "Washerman (धोबी)",
+  "Gardener (माली)",
+  "Babysitter (बच्चों की देखभाल करने वाला)",
+  "Milkman (दूध वाला)",
+  "Fruit Seller (फल विक्रेता)",
+  "Vegetable Seller (सब्ज़ी वाला)",
+  "Street Vendor (फेरीवाला)",
+  "Rickshaw Puller (रिक्शा चालक)",
+  "Auto Driver (ऑटो चालक)",
+  "Truck Helper (ट्रक सहायक)",
+  "Grain Mill Worker (आटा चक्की कर्मचारी)",
+  "Clay Potter (कुम्हार)",
+  "Weaver (बुनकर)",
+  "Bamboo Worker (बाँस कारीगर)",
+  "Rope Maker (रस्सी बनाने वाला)",
+  "Cobbler (मोची)",
+  "Cycle Mechanic (साइकिल मिस्त्री)",
+  "Mobile Repairer (मोबाइल मरम्मत वाला)",
+  "Street Cleaner (सड़क सफाईकर्मी)",
+  "Security Guard (सुरक्षा गार्ड)",
+  "Temple Priest (पुजारी)",
+  "Ayurveda Healer (देसी वैद्य)",
+  "Quilt Maker (रजाई सिलने वाला)",
+  "Toy Maker (खिलौना बनाने वाला)",
+  "Basket Weaver (टोकरी बुनने वाला)"
+];
+
+    const occupationSelect = document.getElementById("searchOccupation");
+    occupations.forEach(occupation => {
+      const option = document.createElement("option");
+      option.value = occupation;
+      option.textContent = occupation;
+      occupationSelect.appendChild(option);
+    });
+  };
+</script>
+       
+        <select name="block" id="searchBlock" required>
+          <option value="">Select Block</option>
+        </select>
+        <input type="submit" value="Search">
+      </form>
+      <div id="searchResults"></div>
+    </div>
+
+    <footer>
+      &copy; 2025 SkillConnect. All rights reserved. For Further Details or Help Contact 6370132165 . 
+    </footer>
+  </div>
+  <script>
+    const occupations = ["Electrician", "Plumber", "Carpenter", "Painter", "Mechanic", "Mason", "Welder", "Tailor", "Driver", "Cook", "Gardener", "Barber", "Cleaner", "Babysitter", "Security Guard", "Construction Worker", "AC Technician", "Mobile Repair", "Computer Technician", "Housekeeper", "Washerman", "Handicraft Artist", "Blacksmith", "Milkman", "Agricultural Laborer", "Potter", "Rope Maker", "Fisherman", "Rickshaw Puller", "Weaver", "Cobbler", "Priest", "Chowkidar", "Tiffin Supplier", "Event Helper", "Farm Equipment Repair", "Ayurvedic Healer", "Animal Caretaker", "Vendor", "Cloth Dyer", "Drum Maker", "Street Performer", "Herbal Seller", "Bird Feeder", "Tent House Worker", "DJ Operator", "Nurse", "Hospital Helper", "Local Tour Guide", "Poultry Worker"];
+    const occupationSelect = document.getElementById("occupationSelect");
+    occupations.forEach(job => occupationSelect.appendChild(new Option(job, job)));
+
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbz8mCkNWgI9ZM5FLPm5WhSh6mivmNiPA4MBaXHW56aRU5ghhzapZC84G8AUcdYYLA0f/exec'
+    document.getElementById("registerForm").addEventListener("submit", e => {
+      e.preventDefault();
+      fetch(scriptURL, {
+        method: "POST",
+        body: new FormData(document.getElementById("registerForm"))
+      })
+        .then(res => alert("Registered successfully!"))
+        .catch(err => alert("Error!"));
+    });
+
+    document.getElementById("searchForm").addEventListener("submit", e => {
+      e.preventDefault();
+      const state = document.getElementById("searchState").value;
+      const district = document.getElementById("searchDistrict").value;
+      const block = document.getElementById("searchBlock").value;
+
+      fetch(scriptURL)
+        .then(res => res.json())
+        .then(data => {
+          const results = data.filter(row => row.state === state && row.district === district && row.block === block);
+          const resultsContainer = document.getElementById("searchResults");
+          resultsContainer.innerHTML = results.length ? results.map(worker => `
+            <div class="result-card">
+              <strong>Name:</strong> ${worker.name}<br>
+              <strong>Occupation:</strong> ${worker.occupation}<br>
+              <strong>Experience:</strong> ${worker.experience}<br>
+              <strong>Mobile:</strong> ${worker.mobile}
+            </div>
+          `).join('') : '<p>We are sorry we could not find any workers in this area right now please try another location.</p>';
+        })
+        .catch(err => alert("Failed to fetch data"));
+    });
+
+    const locationData = {
+      "Odisha": {
+        "Angul": ["Angul Sadar", "Banarpal", "Chhendipada", "Athamallik Sadar", "Kishorenagar", "Pallahara Sadar", "Talcher Sadar", "Kaniha"],
+        "Balangir": ["Balangir", "Titilagarh", "Patnagarh", "Saintala", "Turekela", "Belpara", "Loisinga", "Puintala", "Deogaon", "Gudvela", "Muribahal", "Agalpur", "Bongamunda", "Khaprakhol"],
+        "Bargarh": ["Bargarh", "Attabira", "Barpali", "Bheden", "Bijepur", "Gaisilet", "Jharbandh", "Melchhamunda", "Padampur", "Sohela", "Ambabhona", "Paikmal"],
+        "Deogarh": ["Reamal", "Barkote", "Tileibani"],
+        "Dhenkanal": ["Dhenkanal", "Gondia", "Kankadahad", "Parjang", "Bhuban", "Kamakshyanagar", "Odapada", "Hindol"],
+        "Jharsuguda": ["Jharsuguda", "Laikera", "Kirmira", "Kolabira", "Lakhanpur"],
+        "Kendujhar": ["Keonjhar", "Champua", "Jhumpura", "Barbil", "Banspal", "Telkoi", "Harichandanpur", "Ghatgaon", "Patna", "Saharpada", "Joda", "Anandapur", "Ghasipura", "Hatadihi"],
+        "Sambalpur": ["Bamra", "Dhankauda", "Jujomura", "Kuchinda", "Maneswar", "Naktideul", "Rairakhol", "Rengali", "Jamankira"],
+        "Subarnapur": ["Binka", "Binika", "Dunguripali", "Rampur", "Sonepur", "Tarbha", "Ullunda"],
+        "Sundargarh": ["Sundargarh", "Lephripara", "Hemgir", "Tangarpali", "Subdega", "Bargaon", "Kutra", "Rajgangpur", "Lahunipara", "Banei", "Gurundia", "Koira", "Bonai"],
+        "Balasore": ["Balasore", "Baliapal", "Basta", "Bhograi", "Jaleswar", "Remuna", "Simulia", "Soro", "Nilgiri", "Khaira", "Oupada"],
+        "Bhadrak": ["Bhadrak", "Bansada", "Basudevpur", "Bonth", "Chandabali", "Dhamanagar", "Tihidi"],
+        "Cuttack": ["Athagarh", "Badamba", "Banki", "Baramba", "Cuttack Sadar", "Kantapada", "Mahanga", "Narasinghpur", "Niali", "Nischintakoili", "Salepur", "Tangi-Choudwar"],
+        "Jagatsinghpur": ["Jagatsinghpur", "Balikuda", "Biridi", "Erasama", "Kujang", "Naugaon", "Raghunathpur", "Tirtol"],
+        "Jajpur": ["Jajpur", "Binjharpur", "Bari", "Rasulpur", "Korei", "Sukinda", "Dasarathpur", "Dharmasala", "Badachana"],
+        "Kendrapara": ["Aul", "Derabish", "Garadpur", "Kendrapara", "Mahakalapada", "Marshaghai", "Pattamundai", "Rajkanika", "Rajnagar"],
+        "Khordha": ["Balianta", "Balipatna", "Banapur", "Begunia", "Bhubaneswar", "Bolagarh", "Chilika", "Jatni", "Khordha", "Tangi"],
+        "Mayurbhanj": ["Baripada", "Badasahi", "Betanati", "Bangriposi", "Bisoi", "Gopabandhunagar", "Jashipur", "Kaptipada", "Karanjia", "Khunta", "Kusumi", "Morada", "Rairangpur", "Raruan", "Rasgovindpur", "Sarasakana", "Shamakhunta", "Suliapada", "Udala"],
+        "Nayagarh": ["Bhapur", "Dasapalla", "Gania", "Khandapada", "Nuagaon", "Nayagarh", "Odagaon", "Ranpur"],
+        "Puri": ["Puri Sadar", "Brahmagiri", "Delanga", "Gop", "Kanas", "Kakatpur", "Krushnaprasad", "Nimapada", "Pipili", "Satyabadi", "Konark"],
+        "Boudh": ["Boudh", "Harabhanga", "Kantamal"],
+        "Gajapati": ["Mohana", "R.Udayagiri", "Rayagada", "Gumma", "Kasinagar", "Nuagada", "Paralakhemundi"],
+        "Ganjam": ["Aska", "Beguniapada", "Bellaguntha", "Berhampur", "Bhanjanagar", "Buguda", "Chhatrapur", "Chikiti", "Dharakote", "Digapahandi", "Ganjam", "Hinjilicut", "Jagannathprasad", "Kabisurya Nagar", "Khallikote", "Kukudakhandi", "Patrapur", "Polosara", "Purusottampur", "Rangeilunda", "Sanakhemundi", "Sheragada", "Sorada"],
+        "Kalahandi": ["Bhawanipatna", "Kesinga", "Lanjigarh", "Narla", "Karlamunda", "M. Rampur", "T. Rampur", "Dharamgarh", "Junagarh", "Koksara", "Jaipatna", "Kalampur", "Golamunda"],
+        "Kandhamal": ["Baliguda", "Chakapad", "Daringbadi", "G. Udayagiri", "Kandhamal", "Khajuripada", "Kotagarh", "Phiringia", "Raikia", "Tikabali", "Tumudibandha"],
+        "Koraput": ["Koraput", "Bandhugaon", "Dasamantapur", "Laxmipur", "Machhakund (Lamtaput)", "Nandapur", "Narayanapatna", "Pottangi", "Similiguda", "Jeypore", "Boipariguda", "Borigumma", "Kotpad", "Kundura"],
+        "Malkangiri": ["Kalimela", "Khairput", "Kudumulugumma", "Korukonda", "Malkangiri", "Mathili", "Podia"],
+        "Nabarangpur": ["Chandahandi", "Jharigaon", "Kosagumuda", "Nabarangpur", "Nandahandi", "Papadahandi", "Raighar", "Tentulikhunti", "Umerkote"],
+        "Nuapada": ["Boden", "Khariar", "Komna", "Nuapada", "Sinapali"],
+        "Rayagada": ["Bissamcuttack", "Chandrapur", "Gunupur", "Kashipur", "Kolnara", "Muniguda", "Padmapur", "Ramanaguda", "Rayagada"]
+          },
+    "West Bengal": {
+      "Alipurduar": ["Alipurduar I", "Alipurduar II", "Madarihat Birpara", "Kalchini", "Falakata", "Kumargram"],
+      "Bankura": ["Bankura I", "Bankura II", "Barjora", "Chhatna", "Gangajalghati", "Indpur", "Indas", "Jaypur", "Khatra", "Mejia", "Onda", "Raipur", "Ranibandh", "Saltora", "Sarenga", "Simlapal", "Sonamukhi", "Taldangra", "Vishnupur"],
+      "Birbhum": ["Bolpur", "Dubrajpur", "Ilambazar", "Labpur", "Mayureswar I", "Mayureswar II", "Md. Bazar", "Nanoor", "Nalhati I", "Nalhati II", "Rajnagar", "Rampurhat I", "Rampurhat II", "Sainthia", "Suri I", "Suri II"],
+      "Cooch Behar": ["Cooch Behar I", "Cooch Behar II", "Dinhata I", "Dinhata II", "Haldibari", "Mathabhanga I", "Mathabhanga II", "Mekhliganj", "Sitai", "Sitalkuchi", "Tufanganj I", "Tufanganj II"],
+      "Dakshin Dinajpur": ["Balurghat", "Banshihari", "Gangarampur", "Harirampur", "Hili", "Kumarganj", "Tapan"],
+      "Darjeeling": ["Darjeeling Pulbazar", "Jorebunglow Sukhiapokhri", "Kurseong", "Mirik", "Rangli Rangliot", "Siliguri", "Matigara", "Phansidewa", "Kharibari", "Naxalbari"],
+      "Hooghly": ["Arambagh", "Balagarh", "Chinsurah Mogra", "Dhaniakhali", "Goghat I", "Goghat II", "Haripal", "Jangipara", "Khanakul I", "Khanakul II", "Pursurah", "Polba Dadpur", "Pandua", "Serampore", "Singur", "Tarakeswar", "Udaynarayanpur"],
+      "Howrah": ["Amta I", "Amta II", "Bagnan I", "Bagnan II", "Domjur", "Jagatballavpur", "Panchla", "Sankrail", "Shyampur I", "Shyampur II", "Uluberia I", "Uluberia II"],
+      "Jalpaiguri": ["Dhupguri", "Falakata", "Mal", "Matiali", "Maynaguri", "Nagrakata", "Rajganj", "Sadar", "Kalchini"],
+      "Jhargram": ["Binpur I", "Binpur II", "Gopiballavpur I", "Gopiballavpur II", "Jamboni", "Jhargram", "Nayagram", "Sankrail"],
+      "Kalimpong": ["Kalimpong I", "Kalimpong II", "Gorubathan"],
+      "Malda": ["Bamangola", "Chanchal I", "Chanchal II", "English Bazar", "Gazole", "Habibpur", "Harishchandrapur I", "Harishchandrapur II", "Kaliachak I", "Kaliachak II", "Kaliachak III", "Manikchak", "Old Malda", "Ratua I", "Ratua II"],
+      "Murshidabad": ["Beldanga I", "Beldanga II", "Berhampore", "Bhagawangola I", "Bhagawangola II", "Bharatpur I", "Bharatpur II", "Domkal", "Farakka", "Hariharpara", "Jalangi", "Kandi", "Lalgola", "Murshidabad Jiaganj", "Nabagram", "Naoda", "Raghunathganj I", "Raghunathganj II", "Raninagar I", "Raninagar II", "Sagardighi", "Samserganj", "Suti I", "Suti II"],
+      "Nadia": ["Chakdaha", "Chapra", "Hanskhali", "Haringhata", "Kaliganj", "Karimpur I", "Karimpur II", "Krishnanagar I", "Krishnanagar II", "Krishnaganj", "Nakashipara", "Nabadwip", "Ranaghat I", "Ranaghat II", "Santipur", "Tehatta I", "Tehatta II"],
+      "North 24 Parganas": ["Amdanga", "Baduria", "Bagda", "Barasat I", "Barasat II", "Barrackpore I", "Barrackpore II", "Basirhat I", "Basirhat II", "Bongaon I", "Bongaon II", "Deganga", "Gaighata", "Habra I", "Habra II", "Haroa", "Hingalganj", "Minakhan", "Rajarhat", "Sandeshkhali I", "Sandeshkhali II", "Swarupnagar"],
+      "Paschim Bardhaman": ["Asansol", "Barabani", "Durgapur Faridpur", "Jamuria", "Kanksa", "Pandabeswar", "Raniganj", "Salanpur"],
+      "Paschim Medinipur": ["Chandrakona I", "Chandrakona II", "Dantan I", "Dantan II", "Daspur I", "Daspur II", "Debra", "Garbeta I", "Garbeta II", "Garbeta III", "Ghatal", "Keshpur", "Kharagpur I", "Kharagpur II", "Moyna", "Narayangarh", "Pingla", "Sabang", "Salboni", "Midnapore Sadar"],
+      "Purba Bardhaman": ["Ausgram I", "Ausgram II", "Bhatar", "Burdwan I", "Burdwan II", "Galsi I", "Galsi II", "Jamalpur", "Kalna I", "Kalna II", "Katwa I", "Katwa II", "Ketugram I", "Ketugram II", "Khandaghosh", "Mangalkot", "Memari I", "Memari II", "Monteswar", "Purbasthali I", "Purbasthali II", "Raina I", "Raina II"],
+      "Purba Medinipur": ["Bhagabanpur I", "Bhagabanpur II", "Chandipur", "Contai I", "Contai II", "Contai III", "Deshapran", "Egra I", "Egra II", "Haldia", "Moyna", "Nandigram I", "Nandigram II", "Panskura", "Patashpur I", "Patashpur II", "Ramnagar I", "Ramnagar II", "Sutahata"],
+      "Purulia": ["Arsha", "Baghmundi", "Barabazar", "Balarampur", "Hura", "Jhalda I", "Jhalda II", "Joypur", "Kashipur", "Manbazar I", "Manbazar II", "Neturia", "Para", "Puncha", "Purulia I", "Purulia II", "Raghunathpur I", "Raghunathpur II", "Santuri"],
+      "South 24 Parganas": ["Baruipur", "Basanti", "Budge Budge I", "Budge Budge II", "Bhangar I", "Bhangar II", "Canning I", "Canning II", "Diamond Harbour I", "Diamond Harbour II", "Falta", "Jaynagar I", "Jaynagar II", "Kakdwip", "Kulpi", "Kultali", "Mathurapur I", "Mathurapur II", "Namkhana", "Patharpratima", "Rajpur Sonarpur", "Sagar", "Thakurpukur Maheshtala"],
+      "Uttar Dinajpur": ["Chopra", "Goalpokhar I", "Goalpokhar II", "Hemtabad", "Islampur", "Itahar", "Karandighi", "Kaliaganj", "Raiganj"]
+    },
+    "Andhra Pradesh": {
+  "Alluri Sitharama Raju": ["Paderu", "Chintapalle", "Rampachodavaram", "Y. Ramavaram", "Munchingiputtu"],
+  "Anakapalli": ["Anakapalli", "Paravada", "Atchutapuram", "Elamanchili", "Nakkapalli"],
+  "Ananthapuramu": ["Anantapur", "Gooty", "Kadiri", "Tadipatri", "Hindupur"],
+  "Annamayya": ["Rayachoti", "Rajampet", "Lakkireddipalle", "Ramapuram"],
+  "Bapatla": ["Bapatla", "Chirala", "Karlapalem", "Pittalavanipalem"],
+  "Chittoor": ["Chittoor", "Punganur", "Madanapalle", "Palamaner", "Puttur"],
+  "Dr B R Ambedkar Konaseema": ["Amalapuram", "Mummidivaram", "Razole", "Kothapeta"],
+  "East Godavari": ["Rajahmundry", "Kakinada", "Peddapuram", "Tuni", "Rampachodavaram"],
+  "Eluru": ["Eluru", "Nuzvid", "Polavaram", "Jangareddigudem"],
+  "Guntur": ["Guntur", "Mangalagiri", "Tenali", "Sattenapalle", "Repalle"],
+  "Kakinada": ["Kakinada", "Pithapuram", "Peddapuram", "Tuni"],
+  "Krishna": ["Machilipatnam", "Gudivada", "Vuyyuru", "Nandigama"],
+  "Kurnool": ["Kurnool", "Adoni", "Nandyal", "Yemmiganur", "Kodumur"],
+  "Nandyal": ["Nandyal", "Allagadda", "Banaganapalli", "Dhone", "Koilakuntla"],
+  "Nellore": ["Nellore", "Kavali", "Atmakur", "Gudur", "Venkatagiri"],
+  "NTR": ["Vijayawada East", "Vijayawada West", "Ibrahimpatnam", "Tiruvuru"],
+  "Palnadu": ["Narasaraopet", "Chilakaluripet", "Sattenapalli", "Vinukonda"],
+  "Parvathipuram Manyam": ["Parvathipuram", "Salur", "Kurupam", "Balijipeta"],
+  "Prakasam": ["Ongole", "Kandukur", "Markapur", "Chirala", "Kanigiri"],
+  "SPS Nellore": ["Nellore", "Gudur", "Venkatagiri", "Atmakur", "Kavali"],
+  "Srikakulam": ["Srikakulam", "Palasa", "Tekkali", "Pathapatnam", "Etcherla"],
+  "Tirupati": ["Tirupati Urban", "Srikalahasti", "Renigunta", "Guduru", "Chandragiri"],
+  "Visakhapatnam": ["Visakhapatnam Urban", "Bheemunipatnam", "Anakapalli", "Gajuwaka", "Pendurthi"],
+  "Vizianagaram": ["Vizianagaram", "Bobbili", "Parvathipuram", "Salur", "Gajapathinagaram"],
+  "West Godavari": ["Bhimavaram", "Tanuku", "Tadepalligudem", "Palakollu", "Narsapuram"],
+  "YSR Kadapa": ["Kadapa", "Proddatur", "Pulivendula", "Jammalamadugu", "Rayachoti"]
+},
+"Jharkhand": {
+  "Bokaro": ["Bermo", "Chas", "Chandrapura", "Gomia", "Nawadih", "Petarwar"],
+  "Chatra": ["Chatra", "Hunterganj", "Itkhori", "Kancha", "Kunda", "Lawalong", "Mayurhand", "Pratappur", "Simaria"],
+  "Deoghar": ["Deoghar", "Devipur", "Karon", "Madhupur", "Mohanpur", "Sarath", "Sonaraithari", "Palajori"],
+  "Dhanbad": ["Baliapur", "Bhowra", "Dhanbad", "Gobindpur", "Jharia", "Nirsa", "Tundi"],
+  "Dumka": ["Dumka", "Gopikandar", "Hansdiha", "Jama", "Jarmundi", "Kathikund", "Masalia", "Ramgarh", "Raneshwar", "Shikaripara"],
+  "East Singhbhum": ["Baharagora", "Bodam", "Chakulia", "Dhalbhumgarh", "Dumaria", "Ghatshila", "Gurbandha", "Jadugora", "Musabani", "Potka"],
+  "Garhwa": ["Bhandaria", "Bishunpura", "Chinia", "Dandai", "Dhurki", "Garhwa", "Kandi", "Ketar", "Majhiaon", "Meral", "Nagar Untari", "Ramkanda", "Ramna", "Ranka", "Sagma"],
+  "Giridih": ["Bagodar", "Bengabad", "Birni", "Dumri", "Dhanwar", "Gandey", "Giridih", "Jamua", "Pirtand", "Tisri"],
+  "Godda": ["Basantpur", "Borio", "Godda", "Mahagama", "Meherma", "Pathargama", "Poraiyahat", "Rangra"],
+  "Gumla": ["Bishunpur", "Basia", "Chainpur", "Dumri", "Ghumla", "Kamdara", "Palkot", "Raidih", "Sisai"],
+  "Hazaribagh": ["Barhi", "Barkagaon", "Bishnugarh", "Churchu", "Hazaribagh", "Ichak", "Katkamsandi", "Keredari", "Tati Jhariya"],
+  "Jamtara": ["Fatehpur", "Jamtara", "Karmatanr", "Nala", "Narayanpur"],
+  "Khunti": ["Arki", "Khunti", "Karra", "Murhu", "Rania", "Torpa"],
+  "Koderma": ["Chandwara", "Domchanch", "Jainagar", "Koderma", "Markacho", "Satgawan"],
+  "Latehar": ["Balumath", "Barwadih", "Chandwa", "Garu", "Herhanj", "Latehar", "Manika", "Mahuadanr"],
+  "Lohardaga": ["Bhandra", "Kairo", "Kisko", "Lohardaga", "Peshrar", "Senha"],
+  "Pakur": ["Amrapara", "Hiranpur", "Litipara", "Maheshpur", "Pakur", "Pakuria"],
+  "Palamu": ["Bishrampur", "Chainpur", "Chhatarpur", "Hariharganj", "Hussainabad", "Manatu", "Medininagar", "Nawadi", "Pandu", "Panki", "Satbarwa"],
+  "Ramgarh": ["Barkakana", "Chitarpur", "Dulmi", "Gola", "Mandu", "Patratu", "Ramgarh"],
+  "Ranchi": ["Angara", "Bero", "Bundu", "Itki", "Kanke", "Lapung", "Mandar", "Nagri", "Namkum", "Ormanjhi", "Ratu", "Ranchi", "Silli", "Sonahatu", "Tamar"],
+  "Sahibganj": ["Barharwa", "Borio", "Mandro", "Pathna", "Rajmahal", "Sahibganj", "Taljhari", "Udhwa"],
+  "Seraikela Kharsawan": ["Chandil", "Gamharia", "Ichagarh", "Kukru", "Nimdih", "Rajnagar", "Saraikela", "Kharsawan"],
+  "Simdega": ["Bano", "Bolba", "Jaldega", "Kersai", "Kolebira", "Kurdeg", "Pakartanr", "Simdega", "Thethaitangar"],
+  "West Singhbhum": ["Anandpur", "Bandgaon", "Chaibasa", "Chakradharpur", "Goilkera", "Gudri", "Hatgamharia", "Jhinkpani", "Khuntpani", "Manoharpur", "Noamundi", "Sonua", "Tonto"]
+},
+"Chhattisgarh": {
+  "Balod": ["Balod", "Dondi", "Dondiluhara", "Gunderdehi", "Gurur"],
+  "Baloda Bazar": ["Baloda Bazar", "Bhatapara", "Bilaigarh", "Kasdol", "Palari", "Simga"],
+  "Balrampur": ["Balrampur", "Ramchandrapur", "Rajpur", "Shankargarh", "Kusmi"],
+  "Bastar": ["Bastar", "Bakawand", "Bade Rajpur", "Lohandiguda", "Tokapal"],
+  "Bemetara": ["Bemetara", "Berla", "Nawagarh", "Saja", "Than-Khamharia"],
+  "Bijapur": ["Bijapur", "Bhopalpatnam", "Bhairamgarh", "Usoor"],
+  "Bilaspur": ["Bilha", "Bodri", "Bharari", "Masturi", "Takhatpur"],
+  "Dantewada (South Bastar)": ["Dantewada", "Barsoor", "Katekalyan", "Kuakonda", "Geedam"],
+  "Dhamtari": ["Dhamtari", "Kurud", "Magarlod", "Nagri", "Sihawa"],
+  "Durg": ["Durg", "Patan", "Dhamdha", "Gunderdehi", "Anda"],
+  "Gariaband": ["Gariaband", "Mainpur", "Chhura", "Deobhog", "Rajim"],
+  "Gaurella-Pendra-Marwahi": ["Gaurella", "Pendra", "Marwahi"],
+  "Janjgir-Champa": ["Janjgir", "Champa", "Pamgarh", "Sakti", "Malkharoda", "Nawagarh", "Jaijaipur"],
+  "Jashpur": ["Jashpur", "Bagicha", "Kunkuri", "Duldula", "Farsabahar", "Manora", "Pathalgaon"],
+  "Kanker (North Bastar)": ["Kanker", "Antagarh", "Charama", "Durgukondal", "Narharpur", "Bhanupratappur"],
+  "Kabirdham (Kawardha)": ["Kawardha", "Bodla", "Pandariya", "Lohara"],
+  "Kondagaon": ["Kondagaon", "Farasgaon", "Makdi", "Pharasgaon", "Keshkal"],
+  "Korba": ["Korba", "Katghora", "Pali", "Podi Uproda"],
+  "Koriya": ["Baikunthpur", "Chirmiri", "Manendragarh", "Bharatpur", "Khadganwan"],
+  "Mahasamund": ["Mahasamund", "Bagbahara", "Basna", "Pithora", "Saraipali"],
+  "Mungeli": ["Mungeli", "Lormi", "Pathariya"],
+  "Narayanpur": ["Narayanpur", "Orchha"],
+  "Raigarh": ["Raigarh", "Gharghoda", "Kharsia", "Sarangarh", "Pusour", "Tamnar"],
+  "Raipur": ["Arang", "Abhanpur", "Raipur", "Tilda", "Dharsiwa"],
+  "Rajnandgaon": ["Dongargarh", "Khairagarh", "Rajnandgaon", "Chhuikhadan", "Ambagarh Chowki", "Mohla"],
+  "Sukma": ["Sukma", "Konta", "Chhindgarh"],
+  "Surajpur": ["Surajpur", "Bhaiyathan", "Odagi", "Pratappur", "Ramanujnagar", "Surajpur", "Premnagar"],
+  "Surguja": ["Ambikapur", "Bhatgaon", "Lakhanpur", "Lundra", "Mainpat", "Rajpur", "Sitapur", "Udaipur"]
+}
+
+    };
+
+    function populateStates(id) {
+      const select = document.getElementById(id);
+      for (const state in locationData) {
+        select.appendChild(new Option(state, state));
+      }
+    }
+
+    function updateDistricts() {
+      const state = document.getElementById("stateSelect").value;
+      const district = document.getElementById("districtSelect");
+      const block = document.getElementById("blockSelect");
+      district.innerHTML = "<option value=''>Select District</option>";
+      block.innerHTML = "<option value=''>Select Block</option>";
+      if (state in locationData) {
+        for (const d in locationData[state]) {
+          district.appendChild(new Option(d, d));
+        }
+      }
+    }
+
+    function updateBlocks() {
+      const state = document.getElementById("stateSelect").value;
+      const district = document.getElementById("districtSelect").value;
+      const block = document.getElementById("blockSelect");
+      block.innerHTML = "<option value=''>Select Block</option>";
+      if (state in locationData && district in locationData[state]) {
+        locationData[state][district].forEach(b => {
+          block.appendChild(new Option(b, b));
+        });
+      }
+    }
+
+    function updateSearchDistricts() {
+      const state = document.getElementById("searchState").value;
+      const district = document.getElementById("searchDistrict");
+      const block = document.getElementById("searchBlock");
+      district.innerHTML = "<option value=''>Select District</option>";
+      block.innerHTML = "<option value=''>Select Block</option>";
+      if (state in locationData) {
+        for (const d in locationData[state]) {
+          district.appendChild(new Option(d, d));
+        }
+      }
+    }
+
+    function updateSearchBlocks() {
+      const state = document.getElementById("searchState").value;
+      const district = document.getElementById("searchDistrict").value;
+      const block = document.getElementById("searchBlock");
+      block.innerHTML = "<option value=''>Select Block</option>";
+      if (state in locationData && district in locationData[state]) {
+        locationData[state][district].forEach(b => {
+          block.appendChild(new Option(b, b));
+        });
+      }
+    }
+
+    function showSection(sectionId) {
+      document.querySelectorAll('.form-section').forEach(s => s.style.display = 'none');
+      document.getElementById(sectionId).style.display = 'block';
+    }
+
+    populateStates("stateSelect");
+    populateStates("searchState");
+  </script>
+</body>
+</html>
